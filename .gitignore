@@ -1,0 +1,38 @@
+# ── Data ──────────────────────────────────────────────────────────────────────
+data/
+
+# ── Model checkpoints & training outputs ──────────────────────────────────────
+checkpoints_*/
+
+# ── Generated plots ───────────────────────────────────────────────────────────
+points_distribution.png
+*.png
+
+# ── Python environment ────────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+__MACOSX/
+
+# ── LaTeX build artifacts ─────────────────────────────────────────────────────
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fls
+*.fdb_latexmk
