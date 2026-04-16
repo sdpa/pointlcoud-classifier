@@ -10,6 +10,7 @@ import argparse
 from dataset import ModelNet40Dataset
 from pointnet import PointNetClassifier
 from transformer import TransformerClassifier
+from hierarchical_transformer import HierarchicalTransformerClassifier
 from torch.utils.data import DataLoader, Subset
 
 def train_epoch(model, loader, optimizer, device):
@@ -135,7 +136,7 @@ def run_experiment(model, train_loader, test_loader, epochs=10, lr=0.001, device
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train 3D Point Cloud Classifier")
-    parser.add_argument('--model', type=str, default='pointnet', choices=['pointnet', 'transformer'], help='Model architecture to run')
+    parser.add_argument('--model', type=str, default='pointnet', choices=['pointnet', 'transformer', 'hierarchical'], help='Model architecture to run')
     parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
     parser.add_argument('--batch_size', type=int, default=64, help='Batch size')
     parser.add_argument('--debug', action='store_true', help='Use a minimal subset of data for debugging/testing')
@@ -161,8 +162,16 @@ if __name__ == "__main__":
         train_dataset = full_train_dataset
         test_dataset = full_test_dataset
     
-    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, drop_last=True)
-    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
+    # pin_memory speeds up CPU→GPU transfers on CUDA; num_workers prefetches
+    # batches in parallel so the GPU never sits idle waiting for data.
+    # pin_memory is a no-op on MPS/CPU so it's safe to always enable.
+    use_pin_memory = device.type == 'cuda'
+    num_workers = 4 if device.type in ('cuda', 'cpu') else 0
+
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                              drop_last=True, num_workers=num_workers, pin_memory=use_pin_memory)
+    test_loader  = DataLoader(test_dataset,  batch_size=args.batch_size, shuffle=False,
+                              num_workers=num_workers, pin_memory=use_pin_memory)
     
     print(f"Train Points: {len(train_dataset)}, Test Points: {len(test_dataset)}")
     
@@ -172,6 +181,9 @@ if __name__ == "__main__":
     elif args.model == 'transformer':
         print("Initializing Lightweight Transformer...")
         model = TransformerClassifier(num_classes=40)
+    elif args.model == 'hierarchical':
+        print("Initializing Hierarchical Transformer (Local-to-Global)...")
+        model = HierarchicalTransformerClassifier(num_classes=40, num_centroids=256, k=16)
     
     save_dir = f'./checkpoints_{args.model}'
     

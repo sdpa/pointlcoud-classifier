@@ -1,9 +1,10 @@
 # Point Cloud Classifier
 
-A PyTorch-based 3D point cloud classification project trained on the **ModelNet40** dataset. Two model architectures are implemented and compared:
+A PyTorch-based 3D point cloud classification project trained on the **ModelNet40** dataset. Three model architectures are implemented and compared:
 
 - **PointNet** — A lightweight baseline using shared MLP layers and global max pooling.
-- **Transformer** — A lightweight self-attention encoder that models global interactions between point embeddings.
+- **Transformer** — A lightweight flat self-attention encoder that models global interactions between all 1024 point embeddings.
+- **Hierarchical Transformer** — A local-to-global architecture that first applies Farthest Point Sampling + k-NN grouping to build local neighbourhoods, encodes each neighbourhood with a small self-attention block, then runs a global transformer over the 256 resulting centroid features. Bridges the gap between PointNet's local structure sensitivity and the Transformer's global reasoning, while reducing attention complexity from O(N²) to O(M·k + M²).
 
 ---
 
@@ -15,9 +16,11 @@ pointcloud_classifier/
 │   └── modelnet40_ply_hdf5_2048/
 ├── checkpoints_pointnet/        # Saved checkpoints for PointNet
 ├── checkpoints_transformer/     # Saved checkpoints for Transformer
+├── checkpoints_hierarchical/    # Saved checkpoints for Hierarchical Transformer
 ├── dataset.py                   # ModelNet40 PyTorch Dataset with augmentation
 ├── pointnet.py                  # PointNet model architecture
-├── transformer.py               # Transformer model architecture
+├── transformer.py               # Flat Transformer model architecture
+├── hierarchical_transformer.py  # Hierarchical (Local-to-Global) Transformer
 ├── train.py                     # Training script (main entry point)
 ├── download_data.py             # Downloads the ModelNet40 HDF5 dataset
 ├── preprocess_data.py           # Preprocesses raw .OFF mesh files into HDF5
@@ -95,6 +98,14 @@ python train.py --model pointnet --epochs 100 --batch_size 64
 python train.py --model transformer --epochs 100 --batch_size 64
 ```
 
+### Train Hierarchical Transformer (Local-to-Global)
+
+```bash
+python train.py --model hierarchical --epochs 100 --batch_size 32
+```
+
+> **Note:** The hierarchical model runs Farthest Point Sampling on the CPU each forward pass. Use `--batch_size 32` if you encounter memory pressure; the FPS loop is the main bottleneck on large batches.
+
 ### All CLI arguments
 
 | Argument | Default | Description |
@@ -159,13 +170,59 @@ Training automatically uses the best available device:
 
 ---
 
+## Running on a SLURM Cluster
+
+### Step 1 — Copy the project to scratch (do this once)
+
+```bash
+cp -r pointcloud_classifier $SCRATCH/pointcloud_classifier
+cd $SCRATCH/pointcloud_classifier
+```
+
+### Step 2 — Set up the environment (do this once, on the login node)
+
+```bash
+bash setup_env.sh
+```
+
+This creates `venv/`, installs all dependencies, and downloads the ModelNet40 dataset into `data/`.
+
+### Step 3 — Submit a job
+
+```bash
+# Train with default settings (PointNet, 100 epochs, batch 64)
+sbatch job.slurm
+
+# Choose a different model
+sbatch --export=MODEL=transformer job.slurm
+sbatch --export=MODEL=hierarchical job.slurm
+
+# Override any hyperparameter
+sbatch --export=MODEL=hierarchical,EPOCHS=50,BATCH=32 job.slurm
+
+# Quick smoke-test (128 samples, completes in ~1 min)
+sbatch --export=MODEL=pointnet,DEBUG=1 job.slurm
+```
+
+### Step 4 — Monitor the job
+
+```bash
+squeue -u $USER                     # check job status
+cat logs/slurm_<job_id>_pointcloud.out   # live stdout
+```
+
+> **Before submitting:** open `job.slurm` and update `#SBATCH --partition=gpu` to match your cluster's GPU partition name. You can find available partitions with `sinfo`.
+
+---
+
 ## Expected Results
 
-On the full ModelNet40 dataset with default hyperparameters (100 epochs, batch size 64):
+On the full ModelNet40 dataset with default hyperparameters (100 epochs):
 
-| Model | Test Accuracy |
-|---|---|
-| PointNet | ~85–87% |
-| Transformer | ~85–88% |
+| Model | Test Accuracy | Notes |
+|---|---|---|
+| PointNet | ~85–87% | Fastest to train |
+| Transformer (flat) | ~85–88% | O(N²) on all 1024 points |
+| Hierarchical Transformer | ~88–91% | O(M·k + M²), M=256, k=16 |
 
 Actual results may vary depending on hardware, random seed, and number of epochs.
