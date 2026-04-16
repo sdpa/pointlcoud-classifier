@@ -56,11 +56,11 @@ echo ""
 JOB_START=$(date +%s)
 
 # ── training runs ─────────────────────────────────────────────────────────────
-run_timed "PointNet   | epochs=1  batch=64" \
-    python train.py --model pointnet --epochs 10 --batch_size 64
+run_timed "PointNet   | epochs=100  batch=64" \
+    python train.py --model pointnet --epochs 100 --batch_size 64
 
-run_timed "Transformer | epochs=1 batch=64" \
-    python train.py --model transformer --epochs 10 --batch_size 64
+# run_timed "Transformer | epochs=1 batch=64" \
+#     python train.py --model transformer --epochs 100 --batch_size 64
 
 # ── job summary ───────────────────────────────────────────────────────────────
 JOB_END=$(date +%s)
