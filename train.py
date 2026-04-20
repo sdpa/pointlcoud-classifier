@@ -136,21 +136,40 @@ def run_experiment(model, train_loader, test_loader, epochs=10, lr=0.001, device
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train 3D Point Cloud Classifier")
-    parser.add_argument('--model', type=str, default='pointnet', choices=['pointnet', 'transformer', 'hierarchical'], help='Model architecture to run')
-    parser.add_argument('--epochs', type=int, default=100, help='Number of training epochs')
-    parser.add_argument('--batch_size', type=int, default=64, help='Batch size')
-    parser.add_argument('--debug', action='store_true', help='Use a minimal subset of data for debugging/testing')
+    parser.add_argument('--model', type=str, default='pointnet',
+                        choices=['pointnet', 'transformer', 'hierarchical'],
+                        help='Model architecture to run')
+    parser.add_argument('--epochs', type=int, default=100,
+                        help='Number of training epochs')
+    parser.add_argument('--batch_size', type=int, default=64,
+                        help='Batch size')
+    parser.add_argument('--data_dir', type=str,
+                        default='data/modelnet40_ply_hdf5_2048',
+                        help='Path to HDF5 dataset directory produced by '
+                             'preprocess_data.py (default: data/modelnet40_ply_hdf5_2048)')
+    parser.add_argument('--subsample', type=str, default='random',
+                        choices=['random', 'fps'],
+                        help='Stage-2 subsampling strategy: random (default) '
+                             'or fps (farthest-point, slower but better coverage)')
+    parser.add_argument('--debug', action='store_true',
+                        help='Use a minimal subset of data for debugging/testing')
     args = parser.parse_args()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'mps' if torch.backends.mps.is_available() else 'cpu')
     print(f"Using device: {device}")
-    
+    print(f"Data directory : {args.data_dir}")
+    print(f"Subsample method: {args.subsample}")
+
     print("Loading dataset...")
     try:
-        full_train_dataset = ModelNet40Dataset(data_dir='data/modelnet40_ply_hdf5_2048', split='train', num_points=1024, augment=True)
-        full_test_dataset = ModelNet40Dataset(data_dir='data/modelnet40_ply_hdf5_2048', split='test', num_points=1024, augment=False)
-    except FileNotFoundError as e:
-        print(f"Dataset not found: {e}. Please ensure data is downloaded.")
+        full_train_dataset = ModelNet40Dataset(data_dir=args.data_dir, split='train',
+                                               num_points=1024, augment=True,
+                                               subsample=args.subsample)
+        full_test_dataset  = ModelNet40Dataset(data_dir=args.data_dir, split='test',
+                                               num_points=1024, augment=False,
+                                               subsample=args.subsample)
+    except (FileNotFoundError, ValueError) as e:
+        print(f"Dataset not found: {e}. Please ensure data is preprocessed first.")
         exit(1)
     
     if args.debug:
@@ -185,7 +204,11 @@ if __name__ == "__main__":
         print("Initializing Hierarchical Transformer (Local-to-Global)...")
         model = HierarchicalTransformerClassifier(num_classes=40, num_centroids=256, k=16)
     
-    save_dir = f'./checkpoints_{args.model}'
+    # Encode both the model name and the data/subsample variant in the checkpoint
+    # directory so different experimental runs never clobber each other.
+    data_tag     = os.path.basename(args.data_dir.rstrip('/'))
+    subsamp_tag  = args.subsample
+    save_dir = f'./checkpoints_{args.model}_{data_tag}_{subsamp_tag}'
     
     print(f"Starting Training for {args.model}...")
     run_experiment(model, train_loader, test_loader, epochs=args.epochs, lr=1e-3, device=device, save_dir=save_dir)
