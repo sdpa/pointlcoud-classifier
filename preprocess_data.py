@@ -233,7 +233,7 @@ if __name__ == '__main__':
     parser.add_argument('--method', type=str, default='uniform',
                         choices=list(SAMPLING_METHODS.keys()),
                         help='Point sampling strategy (default: uniform)')
-    parser.add_argument('--source', type=str, default='data/raw_modelnet40',
+    parser.add_argument('--source', type=str, default='data/ModelNet40',
                         help='Root directory of raw ModelNet40 .off files')
     parser.add_argument('--dest', type=str, default=None,
                         help='Output HDF5 directory. Defaults to '
