@@ -2,11 +2,11 @@
 data/
 
 # ── Model checkpoints & training outputs ──────────────────────────────────────
-checkpoints_*/
+# Tracked in repo (no checkpoints_*/ ignore).
 
 # ── Generated plots ───────────────────────────────────────────────────────────
-points_distribution.png
-*.png
+# points_distribution.png
+# *.png
 
 # ── Python environment ────────────────────────────────────────────────────────
 .venv/
@@ -25,7 +25,7 @@ build/
 *.ipynb_checkpoints
 
 # ── SLURM logs ────────────────────────────────────────────────────────────────
-logs/
+# logs/
 
 # ── macOS ─────────────────────────────────────────────────────────────────────
 .DS_Store
@@ -34,7 +34,7 @@ __MACOSX/
 # ── LaTeX build artifacts ─────────────────────────────────────────────────────
 *.aux
 *.log
-*.out
+# *.out
 *.toc
 *.synctex.gz
 *.fls
