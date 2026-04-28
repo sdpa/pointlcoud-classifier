@@ -13,4 +13,4 @@ module load GCCcore/12.2.0 Python/3.10.8 CUDA/11.3.1
 
 source venv/bin/activate
 
-python train.py --model --epochs 1 pointnet --data_dir data/hdf5_uniform   --subsample random
+python train.py --model pointnet --data_dir data/hdf5_uniform --subsample random --epochs 1
