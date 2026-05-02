@@ -8,31 +8,6 @@ A PyTorch-based 3D point cloud classification project trained on the **ModelNet4
 
 ---
 
-## Project Structure
-
-```
-pointcloud_classifier/
-├── data/                        # Dataset directory (created after download)
-│   └── modelnet40_ply_hdf5_2048/
-├── checkpoints_pointnet/        # Saved checkpoints for PointNet
-├── checkpoints_transformer/     # Saved checkpoints for Transformer
-├── checkpoints_hierarchical/    # Saved checkpoints for Hierarchical Transformer
-├── dataset.py                   # ModelNet40 PyTorch Dataset with augmentation
-├── pointnet.py                  # PointNet model architecture
-├── transformer.py               # Flat Transformer model architecture
-├── hierarchical_transformer.py  # Hierarchical (Local-to-Global) Transformer
-├── train.py                     # Training script (main entry point)
-├── download_data.py             # Downloads the ModelNet40 HDF5 dataset
-├── preprocess_data.py           # Preprocesses raw .OFF mesh files into HDF5
-├── generate_synthetic_data.py   # Generates a small synthetic dataset for testing
-├── eda.py                       # Exploratory data analysis on raw mesh files
-├── pointcloud_classifier.ipynb  # Jupyter notebook walkthrough
-├── requirements.txt             # Python dependencies
-└── report.tex                   # LaTeX report
-```
-
----
-
 ## Setup
 
 ### 1. Create and activate a virtual environment
